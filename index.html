@@ -1,0 +1,974 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>数据分析中心</title>
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-muted: #f8fafc;
+    --border: #e2e8f0;
+    --border-light: #edf2f7;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --accent-text: #3730a3;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --sidebar-w: 272px;
+    --toolbar-h: 44px;
+    --radius: 10px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 6px 24px rgba(15, 23, 42, 0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font-family: inherit; }
+
+  /* Auth / Fatal State */
+  .gate-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .gate-card {
+    max-width: 480px;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px;
+    box-shadow: var(--shadow-md);
+    text-align: center;
+  }
+  .gate-icon {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 14px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .gate-card h1 {
+    font-size: 18px;
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  .gate-card p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin: 6px 0;
+  }
+  .gate-card code {
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+
+  /* App Shell */
+  .app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .app.hidden { display: none; }
+
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    height: 100%;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.2s ease, min-width 0.2s ease, transform 0.2s ease;
+    z-index: 30;
+    overflow: hidden;
+  }
+  .app.sidebar-collapsed .sidebar {
+    width: 0;
+    min-width: 0;
+    border-right-color: transparent;
+  }
+  .sidebar-header {
+    padding: 14px 14px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .brand-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+  .brand-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .icon-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 7px;
+    height: 28px;
+    padding: 0 9px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .icon-btn:hover {
+    background: var(--surface-muted);
+    color: var(--text);
+    border-color: #cbd5e1;
+  }
+  .icon-btn.primary {
+    background: var(--accent-soft);
+    border-color: #c7d2fe;
+    color: var(--accent-text);
+  }
+  .icon-btn.primary:hover {
+    background: #e0e7ff;
+  }
+
+  .search-box {
+    padding: 10px 12px 8px;
+    flex-shrink: 0;
+  }
+  .search-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px 0 30px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: var(--text);
+    background: var(--surface-muted) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat 9px center;
+    outline: none;
+    transition: border-color 0.15s, background-color 0.15s;
+  }
+  .search-input:focus {
+    border-color: var(--accent);
+    background-color: var(--surface);
+  }
+
+  .nav-tree {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px 16px;
+  }
+  .product-group {
+    margin-bottom: 4px;
+  }
+  .product-row {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 8px 8px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    transition: background 0.12s;
+  }
+  .product-row:hover {
+    background: var(--surface-muted);
+  }
+  .chevron {
+    width: 14px;
+    height: 14px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+  .product-group.expanded .chevron {
+    transform: rotate(90deg);
+  }
+  .product-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .count-pill {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface-muted);
+    border: 1px solid var(--border-light);
+    border-radius: 999px;
+    padding: 1px 7px;
+    flex-shrink: 0;
+  }
+  .report-list {
+    display: none;
+    padding: 2px 0 4px 16px;
+  }
+  .product-group.expanded .report-list {
+    display: block;
+  }
+  .report-item {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    border-left: 2px solid var(--border-light);
+    padding: 7px 10px;
+    margin: 2px 0;
+    border-radius: 0 8px 8px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .report-item:hover {
+    background: var(--surface-muted);
+  }
+  .report-item.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+  }
+  .report-title {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+  .report-item.active .report-title {
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+  .report-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+  }
+  .report-summary {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nav-empty {
+    padding: 24px 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .sidebar-footer {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border-light);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    background: var(--surface-muted);
+  }
+
+  /* Main Area */
+  .main {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .toolbar {
+    height: var(--toolbar-h);
+    min-height: var(--toolbar-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .crumb-prod {
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .crumb-sep {
+    color: #cbd5e1;
+  }
+  .crumb-rep {
+    color: var(--text);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .date-pill {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .viewport {
+    flex: 1;
+    position: relative;
+    background: #fff;
+    overflow: hidden;
+  }
+  #report-frame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #fff;
+  }
+  .overlay-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .overlay-state.hidden { display: none; }
+  .state-card {
+    max-width: 440px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 26px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .state-card h2 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .state-card p {
+    margin: 6px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .spinner {
+    width: 26px;
+    height: 26px;
+    margin: 0 auto 12px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 12.5px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.18s, transform 0.18s;
+    z-index: 60;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .mobile-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    z-index: 25;
+  }
+
+  @media (max-width: 800px) {
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      box-shadow: var(--shadow-md);
+      transform: translateX(0);
+    }
+    .app.sidebar-collapsed .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      transform: translateX(-100%);
+    }
+    .app:not(.sidebar-collapsed) .mobile-backdrop {
+      display: block;
+    }
+    .date-pill { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate-wrap">
+  <div class="gate-card">
+    <div class="gate-icon">🔒</div>
+    <h1 id="gate-title">数据分析中心</h1>
+    <p id="gate-msg">正在验证密钥并加载加密目录…</p>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <div id="mobile-backdrop" class="mobile-backdrop"></div>
+  <aside class="sidebar" aria-label="报表目录">
+    <div class="sidebar-header">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span id="brand-title" class="brand-title">数据分析中心</span>
+      </div>
+      <button id="btn-collapse-sidebar" class="icon-btn" type="button" title="收起侧边栏">收起</button>
+    </div>
+    <div class="search-box">
+      <input id="search-input" class="search-input" type="search" placeholder="搜索产品或分析报告…">
+    </div>
+    <nav id="nav-tree" class="nav-tree"></nav>
+    <div id="sidebar-footer" class="sidebar-footer"></div>
+  </aside>
+
+  <main class="main">
+    <header class="toolbar">
+      <div class="toolbar-left">
+        <button id="btn-toggle-sidebar" class="icon-btn" type="button" title="展开/收起目录">☰ 目录</button>
+        <div id="breadcrumb" class="breadcrumb">
+          <span class="crumb-rep">未选择报表</span>
+        </div>
+        <span id="active-date" class="date-pill" style="display:none"></span>
+      </div>
+      <div class="toolbar-right">
+        <button id="btn-copy-link" class="icon-btn" type="button" style="display:none">复制直达链接</button>
+        <button id="btn-new-tab" class="icon-btn" type="button" style="display:none">新标签打开</button>
+        <button id="btn-fullscreen" class="icon-btn primary" type="button" style="display:none">全屏查看</button>
+      </div>
+    </header>
+
+    <section id="viewport" class="viewport">
+      <iframe id="report-frame" title="报表视图"></iframe>
+      <div id="overlay" class="overlay-state hidden">
+        <div id="overlay-card" class="state-card"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function() {
+  var gate = document.getElementById('gate');
+  var gateMsg = document.getElementById('gate-msg');
+  var app = document.getElementById('app');
+  var brandTitle = document.getElementById('brand-title');
+  var navTree = document.getElementById('nav-tree');
+  var sidebarFooter = document.getElementById('sidebar-footer');
+  var searchInput = document.getElementById('search-input');
+  var breadcrumb = document.getElementById('breadcrumb');
+  var activeDateEl = document.getElementById('active-date');
+  var reportFrame = document.getElementById('report-frame');
+  var overlay = document.getElementById('overlay');
+  var overlayCard = document.getElementById('overlay-card');
+  var viewport = document.getElementById('viewport');
+  var btnCopyLink = document.getElementById('btn-copy-link');
+  var btnNewTab = document.getElementById('btn-new-tab');
+  var btnFullscreen = document.getElementById('btn-fullscreen');
+  var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+  var btnCollapseSidebar = document.getElementById('btn-collapse-sidebar');
+  var mobileBackdrop = document.getElementById('mobile-backdrop');
+  var toastEl = document.getElementById('toast');
+
+  var state = {
+    keyParam: '',
+    aesKey: null,
+    manifest: null,
+    expanded: new Set(),
+    activeProductId: null,
+    activeReportId: null,
+    activeHtmlForNewTab: null,
+    searchQuery: '',
+    cache: new Map(),
+    toastTimer: null
+  };
+
+  function showGateError(htmlText) {
+    gate.style.display = 'flex';
+    app.classList.add('hidden');
+    gateMsg.innerHTML = htmlText;
+  }
+
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    if (state.toastTimer) clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(function() {
+      toastEl.classList.remove('show');
+    }, 2200);
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function b64urlToBytes(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function b64ToBytes(s) {
+    var clean = s.replace(/\s+/g, '');
+    var bin = atob(clean);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  async function decryptBin(text, aesKey) {
+    var raw = b64ToBytes(text);
+    if (raw.length < 32) throw new Error('数据长度不足');
+    var iv = raw.slice(0, 16);
+    var ct = raw.slice(16);
+    var buf = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: iv }, aesKey, ct);
+    var plain = new TextDecoder().decode(buf);
+    return JSON.parse(plain);
+  }
+
+  function buildInjectedHtml(payload) {
+    var patch = "document.addEventListener('click',function(e){var a=e.target&&e.target.closest?e.target.closest('a'):null;if(!a)return;var h=a.getAttribute('href')||'';if(!/\\.csv$/i.test(h))return;var n=h.split('/').pop();var c=(window.__CSVS||{})[n];if(c==null)return;e.preventDefault();var b=new Blob([c],{type:'text/csv;charset=utf-8'});var u=URL.createObjectURL(b);var t=document.createElement('a');t.href=u;t.download=n;t.click();setTimeout(function(){URL.revokeObjectURL(u);},5000);},true);";
+    var inject = '<script>window.__CSVS=' + JSON.stringify(payload.csv || {}).replace(/</g, '\\u003c') + ';' + patch + '<\/script>';
+    var html = payload.html || '';
+    var lower = html.toLowerCase();
+    var idx = lower.lastIndexOf('</body>');
+    if (idx >= 0) {
+      return html.slice(0, idx) + inject + html.slice(idx);
+    }
+    return html + inject;
+  }
+
+  function showOverlayLoading(title) {
+    overlay.classList.remove('hidden');
+    overlayCard.innerHTML = '<div class="spinner"></div><h2>正在解密报表</h2><p>' + escapeHtml(title || '') + '</p>';
+  }
+
+  function showOverlayEmpty() {
+    overlay.classList.remove('hidden');
+    overlayCard.innerHTML = '<h2>门户已就绪，暂无已上线报表</h2><p>当前目录下还没有任何分析报告。<br>以后生成 HTML 报表后，只需对助手说 <b>「上线」</b>，就会自动加密并归档到左侧产品目录中。</p>';
+  }
+
+  function showOverlayError(message, product, report) {
+    overlay.classList.remove('hidden');
+    overlayCard.innerHTML = '<h2>报表加载失败</h2><p>' + escapeHtml(message) + '</p><div style="margin-top:14px"><button id="btn-retry-load" class="icon-btn primary" type="button">重新加载</button></div>';
+    var retryBtn = document.getElementById('btn-retry-load');
+    if (retryBtn && product && report) {
+      retryBtn.addEventListener('click', function() {
+        selectReport(product, report, true);
+      });
+    }
+  }
+
+  function hideOverlay() {
+    overlay.classList.add('hidden');
+  }
+
+  function setSidebarCollapsed(collapsed) {
+    app.classList.toggle('sidebar-collapsed', collapsed);
+    btnToggleSidebar.textContent = collapsed ? '☰ 展开目录' : '☰ 目录';
+  }
+
+  function renderNav() {
+    var products = (state.manifest && state.manifest.products) || [];
+    var q = state.searchQuery.trim().toLowerCase();
+    var totalReports = 0;
+    products.forEach(function(p) {
+      totalReports += (p.reports || []).length;
+    });
+
+    navTree.innerHTML = '';
+    var matchedProducts = 0;
+
+    products.forEach(function(prod) {
+      var reports = prod.reports || [];
+      var prodMatch = !q || (prod.name || '').toLowerCase().indexOf(q) >= 0;
+      var filteredReports = q && !prodMatch
+        ? reports.filter(function(r) {
+            var hay = ((r.title || '') + ' ' + (r.date || '') + ' ' + (r.summary || '')).toLowerCase();
+            return hay.indexOf(q) >= 0;
+          })
+        : reports;
+
+      if (q && !prodMatch && filteredReports.length === 0) return;
+      matchedProducts++;
+
+      var group = document.createElement('div');
+      var isExpanded = q ? true : state.expanded.has(prod.id);
+      group.className = 'product-group' + (isExpanded ? ' expanded' : '');
+
+      var prodBtn = document.createElement('button');
+      prodBtn.type = 'button';
+      prodBtn.className = 'product-row';
+      prodBtn.innerHTML =
+        '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 6 6 6-6 6"/></svg>' +
+        '<span class="product-name">' + escapeHtml(prod.name) + '</span>' +
+        '<span class="count-pill">' + filteredReports.length + '</span>';
+
+      prodBtn.addEventListener('click', function() {
+        if (state.expanded.has(prod.id)) state.expanded.delete(prod.id);
+        else state.expanded.add(prod.id);
+        group.classList.toggle('expanded', state.expanded.has(prod.id));
+      });
+      group.appendChild(prodBtn);
+
+      var list = document.createElement('div');
+      list.className = 'report-list';
+
+      if (filteredReports.length === 0) {
+        var emptyRep = document.createElement('div');
+        emptyRep.className = 'nav-empty';
+        emptyRep.style.padding = '8px 10px';
+        emptyRep.style.textAlign = 'left';
+        emptyRep.textContent = '暂无分析报表';
+        list.appendChild(emptyRep);
+      } else {
+        filteredReports.forEach(function(rep) {
+          var item = document.createElement('button');
+          item.type = 'button';
+          var isActive = prod.id === state.activeProductId && rep.id === state.activeReportId;
+          item.className = 'report-item' + (isActive ? ' active' : '');
+          item.title = rep.summary || rep.title;
+
+          var metaParts = [];
+          if (rep.date) metaParts.push('<span>' + escapeHtml(rep.date) + '</span>');
+          if (rep.summary) metaParts.push('<span class="report-summary">· ' + escapeHtml(rep.summary) + '</span>');
+
+          item.innerHTML =
+            '<span class="report-title">' + escapeHtml(rep.title) + '</span>' +
+            (metaParts.length ? '<span class="report-meta">' + metaParts.join('') + '</span>' : '');
+
+          item.addEventListener('click', function() {
+            selectReport(prod, rep, false);
+            if (window.innerWidth <= 800) setSidebarCollapsed(true);
+          });
+          list.appendChild(item);
+        });
+      }
+
+      group.appendChild(list);
+      navTree.appendChild(group);
+    });
+
+    if (matchedProducts === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'nav-empty';
+      empty.textContent = q ? '没有匹配的产品或分析' : '暂无产品与报表';
+      navTree.appendChild(empty);
+    }
+
+    var updatedDate = (state.manifest && state.manifest.updated_at) ? state.manifest.updated_at.slice(0, 10) : '';
+    sidebarFooter.innerHTML =
+      '<span>' + products.length + ' 个产品 · ' + totalReports + ' 份报表</span>' +
+      '<span>' + escapeHtml(updatedDate) + '</span>';
+  }
+
+  function updateToolbar(prod, rep) {
+    if (!prod || !rep) {
+      breadcrumb.innerHTML = '<span class="crumb-rep">数据分析中心</span>';
+      activeDateEl.style.display = 'none';
+      btnCopyLink.style.display = 'none';
+      btnNewTab.style.display = 'none';
+      btnFullscreen.style.display = 'none';
+      return;
+    }
+    breadcrumb.innerHTML =
+      '<span class="crumb-prod">' + escapeHtml(prod.name) + '</span>' +
+      '<span class="crumb-sep">/</span>' +
+      '<span class="crumb-rep">' + escapeHtml(rep.title) + '</span>';
+    if (rep.date) {
+      activeDateEl.textContent = rep.date;
+      activeDateEl.style.display = 'inline-block';
+    } else {
+      activeDateEl.style.display = 'none';
+    }
+    btnCopyLink.style.display = 'inline-flex';
+    btnNewTab.style.display = 'inline-flex';
+    btnFullscreen.style.display = 'inline-flex';
+  }
+
+  async function selectReport(prod, rep, forceReload) {
+    state.activeProductId = prod.id;
+    state.activeReportId = rep.id;
+    state.expanded.add(prod.id);
+    renderNav();
+    updateToolbar(prod, rep);
+
+    var newHash = '#k=' + encodeURIComponent(state.keyParam) +
+      '&p=' + encodeURIComponent(prod.id) +
+      '&r=' + encodeURIComponent(rep.id);
+    try { history.replaceState(null, '', newHash); } catch (e) {}
+
+    var cacheKey = prod.id + '/' + rep.id + '@' + (rep.updated_at || '');
+    if (!forceReload && state.cache.has(cacheKey)) {
+      var cachedHtml = state.cache.get(cacheKey);
+      state.activeHtmlForNewTab = cachedHtml;
+      reportFrame.srcdoc = cachedHtml;
+      hideOverlay();
+      return;
+    }
+
+    showOverlayLoading(prod.name + ' / ' + rep.title);
+    try {
+      var url = rep.file + '?v=' + encodeURIComponent(rep.updated_at || Date.now());
+      var resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      var binText = await resp.text();
+      var payload = await decryptBin(binText, state.aesKey);
+      var injected = buildInjectedHtml(payload);
+      state.cache.set(cacheKey, injected);
+      if (state.activeProductId === prod.id && state.activeReportId === rep.id) {
+        state.activeHtmlForNewTab = injected;
+        reportFrame.srcdoc = injected;
+        hideOverlay();
+      }
+    } catch (e) {
+      if (state.activeProductId === prod.id && state.activeReportId === rep.id) {
+        showOverlayError('无法加载或解密该报表（' + (e && e.message ? e.message : '未知错误') + '）。', prod, rep);
+      }
+    }
+  }
+
+  function findInitialTarget(manifest, pParam, rParam) {
+    var products = manifest.products || [];
+    if (pParam) {
+      var matchedProd = products.find(function(p) { return p.id === pParam; });
+      if (matchedProd) {
+        var reps = matchedProd.reports || [];
+        if (rParam) {
+          var matchedRep = reps.find(function(r) { return r.id === rParam; });
+          if (matchedRep) return { prod: matchedProd, rep: matchedRep };
+        }
+        if (reps.length > 0) return { prod: matchedProd, rep: reps[0] };
+      }
+    }
+    for (var i = 0; i < products.length; i++) {
+      var list = products[i].reports || [];
+      if (list.length > 0) return { prod: products[i], rep: list[0] };
+    }
+    return null;
+  }
+
+  searchInput.addEventListener('input', function() {
+    state.searchQuery = searchInput.value || '';
+    renderNav();
+  });
+
+  btnToggleSidebar.addEventListener('click', function() {
+    setSidebarCollapsed(!app.classList.contains('sidebar-collapsed'));
+  });
+  btnCollapseSidebar.addEventListener('click', function() {
+    setSidebarCollapsed(true);
+  });
+  mobileBackdrop.addEventListener('click', function() {
+    setSidebarCollapsed(true);
+  });
+
+  btnCopyLink.addEventListener('click', async function() {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      showToast('已复制当前报表直达链接');
+    } catch (e) {
+      showToast('请手动复制浏览器地址栏链接');
+    }
+  });
+
+  btnNewTab.addEventListener('click', function() {
+    if (!state.activeHtmlForNewTab) return;
+    var blob = new Blob([state.activeHtmlForNewTab], { type: 'text/html;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(function() { URL.revokeObjectURL(url); }, 10000);
+  });
+
+  btnFullscreen.addEventListener('click', function() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(function() {});
+    } else {
+      viewport.requestFullscreen().catch(function() {
+        setSidebarCollapsed(true);
+      });
+    }
+  });
+
+  async function init() {
+    var params = new URLSearchParams(location.hash.slice(1));
+    var k = params.get('k');
+    if (!k) {
+      showGateError('这个链接缺少访问密钥。<br>请向报表负责人索取<b>完整链接</b>（末尾带 <code>#k=…</code> 的那一段）。');
+      return;
+    }
+
+    var keyBytes;
+    try { keyBytes = b64urlToBytes(k); } catch (e) {
+      showGateError('访问密钥格式不正确。');
+      return;
+    }
+    if (keyBytes.length !== 32) {
+      showGateError('访问密钥长度无效。');
+      return;
+    }
+
+    var aesKey;
+    try {
+      aesKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-CBC' }, false, ['decrypt']);
+    } catch (e) {
+      showGateError('当前浏览器不支持 Web Crypto 解密。');
+      return;
+    }
+
+    var resp;
+    try {
+      resp = await fetch('manifest.bin?t=' + Date.now(), { cache: 'no-store' });
+    } catch (e) {
+      showGateError('目录加载失败，请检查网络连接后重试。');
+      return;
+    }
+    if (!resp.ok) {
+      showGateError('目录加载失败（HTTP ' + resp.status + '）。');
+      return;
+    }
+
+    var manifest;
+    try {
+      var text = await resp.text();
+      manifest = await decryptBin(text, aesKey);
+    } catch (e) {
+      showGateError('解密失败：链接可能被截断，或门户已更换访问密钥。<br>请重新索取最新链接。');
+      return;
+    }
+
+    state.keyParam = k;
+    state.aesKey = aesKey;
+    state.manifest = manifest;
+
+    var portalTitle = manifest.title || '数据分析中心';
+    document.title = portalTitle;
+    brandTitle.textContent = portalTitle;
+
+    gate.style.display = 'none';
+    app.classList.remove('hidden');
+    if (window.innerWidth <= 800) setSidebarCollapsed(true);
+
+    var products = manifest.products || [];
+    if (products.length > 0) state.expanded.add(products[0].id);
+
+    var target = findInitialTarget(manifest, params.get('p'), params.get('r'));
+    renderNav();
+    if (target) {
+      selectReport(target.prod, target.rep, false);
+    } else {
+      updateToolbar(null, null);
+      showOverlayEmpty();
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
